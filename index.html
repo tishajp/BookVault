@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>BookVault</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="BookVault"/>
+<meta name="theme-color" content="#0D0B09"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0D0B09;--bg2:#141210;--bg3:#1C1916;--bg4:#232018;
+  --ink:#F0E8D8;--ink2:#A89880;--ink3:#6A5E50;
+  --line:#2A2520;--line2:#3A342C;
+  --gold:#C8964A;--gold2:#E0B060;--goldbg:rgba(200,150,74,0.1);
+  --red:#8B2020;--redbg:rgba(139,32,32,0.1);
+  --green:#3a8a5a;--shadow:rgba(0,0,0,0.6);
+}
+.light{
+  --bg:#F7F2E8;--bg2:#EDE8DC;--bg3:#E4DDD0;--bg4:#DAD3C4;
+  --ink:#1A140C;--ink2:#5C4E3C;--ink3:#9A8C78;
+  --line:#D8D0C0;--line2:#C8C0B0;
+  --gold:#8A5C18;--gold2:#B07820;--goldbg:rgba(138,92,24,0.08);
+  --red:#7A1818;--redbg:rgba(122,24,24,0.07);
+  --green:#1E6030;--shadow:rgba(0,0,0,0.12);
+}
+body{background:#111;font-family:'DM Sans',sans-serif;color:var(--ink);}
+::-webkit-scrollbar{width:0;height:0;}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent;font-family:'DM Sans',sans-serif;border:none;background:none;}
+input,textarea,select{font-family:'DM Sans',sans-serif;}
+img{display:block;}
+.fade{animation:fadeIn 280ms ease both;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.tap{transition:opacity 120ms;}
+.tap:active{opacity:0.6;}
+/* SHELL */
+#shell{
+  width:390px;max-width:100%;height:820px;max-height:calc(100vh - 32px);
+  margin:16px auto;border-radius:46px;
+  background:var(--bg);display:flex;flex-direction:column;overflow:hidden;position:relative;
+  box-shadow:0 40px 100px rgba(0,0,0,0.85),0 0 0 10px #181410,0 0 0 11px #252018;
+}
+.light #shell{box-shadow:0 30px 80px rgba(0,0,0,0.25),0 0 0 10px #3a3020,0 0 0 11px #5a4a30;}
+#grain{position:absolute;inset:0;z-index:10;pointer-events:none;opacity:0.045;border-radius:46px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+  mix-blend-mode:overlay;}
+.light #grain{opacity:0.03;mix-blend-mode:multiply;}
+#statusbar{height:44px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 28px;font-size:13px;font-weight:600;color:var(--ink2);font-family:'DM Mono',monospace;position:relative;z-index:20;}
+#content{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;z-index:15;-webkit-overflow-scrolling:touch;}
+#tabbar{flex-shrink:0;height:78px;background:var(--bg2);border-top:1px solid var(--line);display:flex;padding-bottom:14px;padding-top:6px;position:relative;z-index:20;}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--ink3);transition:color 0.2s;background:none;border:none;padding:0;}
+.tab-btn.active{color:var(--gold);}
+.tab-icon{font-size:18px;line-height:1;}
+.tab-label{font-size:9px;font-family:'DM Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;}
+/* PAGES */
+.page{display:none;padding-bottom:20px;}
+.page.active{display:block;}
+/* TYPOGRAPHY */
+.serif{font-family:'Cormorant Garamond',serif;}
+.mono{font-family:'DM Mono',monospace;}
+/* COMMON */
+.section-pad{padding:8px 22px;}
+.page-title{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:32px;color:var(--ink);letter-spacing:-0.02em;line-height:1;}
+.page-eyebrow{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.18em;color:var(--ink3);text-transform:uppercase;margin-bottom:4px;}
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:10px;}
+.btn-gold{background:var(--gold);color:#0D0B09;border:none;border-radius:8px;padding:11px 16px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;cursor:pointer;}
+.btn-outline{background:transparent;border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink2);cursor:pointer;}
+.field-label{display:block;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:5px;}
+.field-input{width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:8px;padding:10px 12px;color:var(--ink);font-size:14px;outline:none;margin-bottom:10px;}
+.field-input:focus{border-color:var(--gold);}
+.field-textarea{width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:8px;padding:10px 12px;color:var(--ink);font-size:14px;outline:none;resize:vertical;min-height:80px;line-height:1.6;margin-bottom:10px;}
+/* BOOK CARD */
+.book-card{width:100%;text-align:left;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:6px;display:flex;gap:10px;align-items:center;cursor:pointer;transition:opacity 0.15s;}
+.book-card:active{opacity:0.7;}
+.book-thumb{width:38px;height:54px;border-radius:3px;flex-shrink:0;overflow:hidden;position:relative;background:var(--bg4);box-shadow:1px 2px 5px var(--shadow);}
+.book-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.book-thumb-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;opacity:0.4;}
+.book-progress-stripe{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(0,0,0,0.35);}
+.book-progress-fill{height:100%;background:var(--gold);}
+.book-info{flex:1;min-width:0;}
+.book-title-row{display:flex;align-items:baseline;justify-content:space-between;gap:5px;margin-bottom:2px;}
+.book-title{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:15px;color:var(--ink);line-height:1.2;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex:1;}
+.book-rating{flex-shrink:0;color:var(--gold);font-size:10px;letter-spacing:-1px;}
+.book-author{font-size:11px;color:var(--ink3);margin-bottom:3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.book-meta{display:flex;gap:4px;align-items:center;}
+.status-badge{font-family:'DM Mono',monospace;font-size:8px;padding:1px 6px;border-radius:3px;letter-spacing:0.04em;text-transform:uppercase;flex-shrink:0;}
+.book-chevron{color:var(--ink3);font-size:13px;flex-shrink:0;opacity:0.25;}
+/* STATUS CHIPS */
+.status-chip{padding:7px 13px;border-radius:20px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;transition:all 0.15s;border:1px solid var(--line);background:transparent;color:var(--ink2);}
+/* STAR RATING */
+.star{font-size:22px;cursor:pointer;transition:transform 0.1s;color:var(--line);padding:0 2px;line-height:1;background:none;border:none;}
+.star.lit{color:var(--gold);}
+.star:hover{transform:scale(1.2);}
+/* FILTER PILLS */
+.filter-pill{flex-shrink:0;padding:6px 14px;border-radius:20px;background:transparent;border:1px solid var(--line);color:var(--ink2);font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;cursor:pointer;letter-spacing:0.06em;transition:all 0.15s;}
+.filter-pill.active{background:var(--gold);border-color:var(--gold);color:#0D0B09;}
+/* TAG CHIPS */
+.tag-chip{padding:5px 10px;border-radius:6px;background:transparent;border:1px solid var(--line);color:var(--ink3);font-family:'DM Mono',monospace;font-size:9px;cursor:pointer;transition:all 0.15s;}
+.tag-chip.active{background:var(--goldbg);border-color:var(--gold);color:var(--gold);}
+/* READING CARD (home) */
+.reading-card{width:100%;text-align:left;background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:10px;display:flex;gap:14px;cursor:pointer;}
+.reading-cover{width:64px;height:96px;border-radius:4px;flex-shrink:0;overflow:hidden;position:relative;background:var(--bg4);box-shadow:2px 4px 12px var(--shadow);}
+.reading-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+/* SEARCH */
+.search-row{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:10px;}
+.search-row input{flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--ink);}
+/* STICKY HEADER */
+.sticky-hdr{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 20px 12px;}
+/* DETAIL HERO */
+.detail-hero{background:linear-gradient(180deg,var(--bg3) 0%,var(--bg) 100%);padding:8px 0 28px;border-bottom:1px solid var(--line);}
+.detail-cover-wrap{display:flex;flex-direction:column;align-items:center;padding:0 24px;}
+.detail-cover{width:140px;height:210px;border-radius:6px;overflow:hidden;position:relative;background:var(--bg4);box-shadow:0 16px 40px var(--shadow);margin-bottom:18px;}
+.detail-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+/* SCAN */
+.drop-zone{border:2px dashed var(--line2);border-radius:14px;padding:24px 20px;text-align:center;cursor:pointer;margin-bottom:12px;background:var(--bg2);transition:border-color 0.2s;}
+.drop-zone:hover{border-color:var(--gold);}
+/* PROGRESS BAR */
+.prog-bar{height:4px;background:var(--line);border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--gold);border-radius:2px;transition:width 0.4s ease;}
+/* SEARCH RESULTS DROPDOWN */
+.search-results{background:var(--bg3);border:1px solid var(--line);border-radius:10px;overflow:hidden;max-height:280px;overflow-y:auto;margin-top:6px;}
+.search-result-item{display:flex;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer;transition:background 0.1s;}
+.search-result-item:last-child{border-bottom:none;}
+.search-result-item:hover{background:var(--bg4);}
+.sr-thumb{width:36px;height:52px;border-radius:3px;flex-shrink:0;overflow:hidden;background:var(--bg4);position:relative;}
+.sr-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+/* FELT SENSE METER */
+.meter-row{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+.meter-label{font-family:'DM Sans',sans-serif;font-style:italic;font-size:13px;color:var(--ink2);width:56px;}
+.meter-bars{flex:1;display:flex;gap:3px;}
+.meter-bar{flex:1;height:4px;border-radius:2px;background:var(--line);}
+.meter-bar.filled{background:var(--gold);}
+/* SPINE STACK */
+.spine{width:14px;border-radius:2px;overflow:hidden;position:relative;flex-shrink:0;}
+.spine img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.7;}
+/* COLLECTIONS */
+.coll-item{display:flex;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);}
+.coll-item:last-child{border-bottom:none;}
+/* SCAN RESULT */
+.scan-result{display:flex;gap:10px;padding:11px 12px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;margin-bottom:7px;align-items:flex-start;}
+.scan-check{width:22px;height:22px;border-radius:5px;border:1.5px solid var(--line2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:3px;cursor:pointer;transition:all 0.15s;font-size:13px;font-weight:700;color:#0D0B09;}
+.scan-check.on{background:var(--gold);border-color:var(--gold);}
+.scan-thumb{width:40px;height:58px;border-radius:3px;flex-shrink:0;overflow:hidden;background:var(--bg4);position:relative;box-shadow:1px 2px 6px var(--shadow);}
+.scan-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+/* QUOTE BLOCK */
+.quote-block{border-left:2px solid var(--gold);padding-left:16px;margin-bottom:16px;}
+.quote-block p{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:17px;line-height:1.55;color:var(--ink2);}
+/* ENRICH PROGRESS */
+.enrich-prog{margin-bottom:12px;}
+.enrich-prog-hdr{display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:0.08em;margin-bottom:5px;}
+/* PULSE DOTS */
+.pulse-dots{display:flex;justify-content:center;gap:5px;padding:20px 0;}
+.pulse-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);}
+@keyframes pdot{0%,100%{opacity:.2;transform:scale(.7);}50%{opacity:1;transform:scale(1);}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="shell">
+    <div id="grain"></div>
+    <div id="statusbar">
+      <span id="clock">9:41</span>
+      <div style="display:flex;gap:4px;font-size:11px;opacity:.7"><span>●●●●</span><span>▮▮▮</span></div>
+    </div>
+    <div id="content"></div>
+    <div id="tabbar">
+      <button class="tab-btn active" data-tab="home" onclick="switchTab('home')"><span class="tab-icon">⌂</span><span class="tab-label">Home</span></button>
+      <button class="tab-btn" data-tab="library" onclick="switchTab('library')"><span class="tab-icon">▤</span><span class="tab-label">Library</span></button>
+      <button class="tab-btn" data-tab="scan" onclick="switchTab('scan')"><span class="tab-icon">⊡</span><span class="tab-label">Capture</span></button>
+      <button class="tab-btn" data-tab="series" onclick="switchTab('series')"><span class="tab-icon">◫</span><span class="tab-label">Series</span></button>
+      <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')"><span class="tab-icon">◎</span><span class="tab-label">Settings</span></button>
+    </div>
+  </div>
+</div>
+<script>
+// ═══════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════
+const STATUSES=[
+  {id:'tbr',label:'To Read',color:'#6A5E50'},
+  {id:'reading',label:'Reading',color:'#C8964A'},
+  {id:'finished',label:'Finished',color:'#2A7050'},
+  {id:'paused',label:'Paused',color:'#5A4E8A'},
+  {id:'dnf',label:'DNF',color:'#8B2020'},
+  {id:'rereading',label:'Re-reading',color:'#1A6080'}
+];
+const TROPES=['Enemies to Lovers','Slow Burn','Forced Proximity','Second Chance','Fake Dating','Found Family','Forbidden Love','Fated Mates','Age Gap','Grumpy/Sunshine','Touch Her and Die','Dual POV','Morally Grey','Redemption Arc','Dark Academia','Reverse Harem','Love Triangle','Chosen One','Anti-hero','Sports Romance','Small Town','Sapphic','MM Romance'];
+const GENRES=['Fantasy','Romance','Dark Romance','Sci-Fi','Thriller','Mystery','Literary Fiction','Historical Fiction','Self-Help','Biography','Non-Fiction','Horror','Young Adult','Graphic Novel','Poetry','Business','Psychology','Philosophy','Science','History','Magical Realism'];
+const MOODS=['Dark','Hopeful','Cozy','Intense','Funny','Melancholic','Romantic','Tense','Uplifting','Meditative','Escapist','Educational','Mysterious','Nostalgic'];
+const FORMATS=['Hardcover','Paperback','Mass Market','ARC','Signed Edition','First Edition','eBook (Kindle)','eBook (Kobo)','eBook (Epub)','PDF','Audiobook (Audible)','Audiobook (Libro.fm)'];
+const OWNED=['Physical shelf','Kindle','Kobo','Audible','Libro.fm','Calibre','NAS','Google Drive','Library','Borrowed'];
+
+const SEED=[
+  {id:'1',title:'Fourth Wing',author:'Rebecca Yarros',isbn:'9781649374042',cover:'https://covers.openlibrary.org/b/isbn/9781649374042-L.jpg',series:'The Empyrean',seriesNum:'1',year:'2023',pages:'517',publisher:'Red Tower Books',format:'Hardcover',status:'finished',progress:100,rating:5,spicy:4,darkness:3,genres:['Fantasy','Romance'],moods:['Epic','Intense'],tropes:['Enemies to Lovers','Fated Mates'],owned:'Physical shelf',language:'English',description:'Twenty-year-old Violet Sorrengail was supposed to enter the Scribe Quadrant, but her mother has other plans.',note:'Devoured in 3 days.',quote:'Some things you can outrun. Love is not one of them.',dateStarted:'2024-03-01',dateFinished:'2024-03-03',phase:'Early spring',impact:5,depth:4,recommended:'BookTok',collections:['Favourites'],added:'2024-03-01T00:00:00Z'},
+  {id:'2',title:'Iron Flame',author:'Rebecca Yarros',isbn:'9781649374507',cover:'https://covers.openlibrary.org/b/isbn/9781649374507-L.jpg',series:'The Empyrean',seriesNum:'2',year:'2023',pages:'623',publisher:'Red Tower Books',format:'Hardcover',status:'finished',progress:100,rating:5,spicy:5,darkness:4,genres:['Fantasy','Romance'],moods:['Dark','Intense'],tropes:['Forbidden Love','Morally Grey'],owned:'Physical shelf',language:'English',description:'',note:'Even better than the first.',quote:'',dateStarted:'2024-03-04',dateFinished:'2024-03-07',phase:'',impact:5,depth:4,recommended:'',collections:['Favourites'],added:'2024-03-04T00:00:00Z'},
+  {id:'3',title:'A Court of Thorns and Roses',author:'Sarah J. Maas',isbn:'9781619634442',cover:'https://covers.openlibrary.org/b/isbn/9781619634442-L.jpg',series:'ACOTAR',seriesNum:'1',year:'2015',pages:'419',publisher:'Bloomsbury',format:'Paperback',status:'reading',progress:52,rating:0,spicy:3,darkness:3,genres:['Fantasy','Romance'],moods:['Dark','Romantic'],tropes:['Beauty and the Beast'],owned:'Kindle',language:'English',description:'',note:'',quote:'',dateStarted:'2024-10-15',dateFinished:'',phase:'',impact:0,depth:0,recommended:'',collections:['Currently Reading'],added:'2024-10-15T00:00:00Z'},
+  {id:'4',title:'Piranesi',author:'Susanna Clarke',isbn:'9781635575637',cover:'https://covers.openlibrary.org/b/isbn/9781635575637-L.jpg',series:'',seriesNum:'',year:'2020',pages:'272',publisher:'Bloomsbury',format:'Hardcover',status:'finished',progress:100,rating:5,spicy:0,darkness:2,genres:['Literary Fiction','Magical Realism'],moods:['Meditative','Mysterious'],tropes:[],owned:'Physical shelf',language:'English',description:'',note:'Read slowly in cafés.',quote:'The Beauty of the House is immeasurable; its Kindness infinite.',dateStarted:'2024-09-12',dateFinished:'2024-09-21',phase:'A quiet autumn',impact:5,depth:5,recommended:'',collections:['Favourites'],added:'2024-09-12T00:00:00Z'},
+  {id:'5',title:'Atomic Habits',author:'James Clear',isbn:'9780735211292',cover:'https://covers.openlibrary.org/b/isbn/9780735211292-L.jpg',series:'',seriesNum:'',year:'2018',pages:'320',publisher:'Avery',format:'Paperback',status:'finished',progress:100,rating:4,spicy:0,darkness:0,genres:['Self-Help','Psychology'],moods:['Motivating','Practical'],tropes:[],owned:'Kindle',language:'English',description:'',note:'',quote:'You do not rise to the level of your goals. You fall to the level of your systems.',dateStarted:'2024-01-10',dateFinished:'2024-01-18',phase:'New year',impact:4,depth:4,recommended:'',collections:[],added:'2024-01-10T00:00:00Z'},
+  {id:'6',title:'Bluets',author:'Maggie Nelson',isbn:'9781933517407',cover:'https://covers.openlibrary.org/b/isbn/9781933517407-L.jpg',series:'',seriesNum:'',year:'2009',pages:'112',publisher:'Wave Books',format:'Paperback',status:'tbr',progress:0,rating:0,spicy:0,darkness:0,genres:['Essay','Poetry'],moods:['Melancholic'],tropes:[],owned:'Physical shelf',language:'English',description:'',note:'',quote:'',dateStarted:'',dateFinished:'',phase:'',impact:0,depth:0,recommended:'',collections:[],added:'2024-06-01T00:00:00Z'},
+];
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let books=[];
+let currentTab='home';
+let currentView=null; // {view:'detail'|'add'|'edit', id?}
+let curFilter='all', curSort='newest', curSearch='';
+let seriesOpen={};
+let theme='dark';
+
+function loadBooks(){
+  try{const s=localStorage.getItem('bv3_books');books=s?JSON.parse(s):JSON.parse(JSON.stringify(SEED));}
+  catch{books=JSON.parse(JSON.stringify(SEED));}
+}
+function saveBooks(){try{localStorage.setItem('bv3_books',JSON.stringify(books));}catch{}}
+function loadTheme(){theme=localStorage.getItem('bv3_theme')||'dark';applyTheme();}
+function applyTheme(){document.getElementById('app').className=theme==='light'?'light':'';}
+function setTheme(t){theme=t;localStorage.setItem('bv3_theme',t);applyTheme();render();}
+
+function statusColor(s){return(STATUSES.find(x=>x.id===s)||{color:'var(--ink3)'}).color;}
+function statusLabel(s){return(STATUSES.find(x=>x.id===s)||{label:s}).label;}
+function statusClass(s){
+  const l=s||'';
+  if(['reading','rereading'].includes(l))return 'active';
+  if(['finished'].includes(l))return 'done';
+  if(['tbr'].includes(l))return 'want';
+  return 'other';
+}
+
+function getAPI(){return localStorage.getItem('bv3_api_key')||'';}
+
+// ═══════════════════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════════════════
+function updateClock(){
+  const n=new Date();
+  const el=document.getElementById('clock');
+  if(el)el.textContent=n.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true}).replace(' ','').toLowerCase();
+}
+setInterval(updateClock,30000);
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+function switchTab(tab){
+  if(currentView){currentView=null;}
+  currentTab=tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>{b.classList.toggle('active',b.dataset.tab===tab);});
+  render();
+}
+
+function openDetail(id){currentView={view:'detail',id};render();}
+function openAdd(prefill={}){currentView={view:'add',prefill};render();}
+function openEdit(id){currentView={view:'edit',id};render();}
+function goBack(){currentView=null;render();}
+
+// ═══════════════════════════════════════════════════════
+// RENDER ROUTER
+// ═══════════════════════════════════════════════════════
+function render(){
+  const content=document.getElementById('content');
+  const tabbar=document.getElementById('tabbar');
+  if(!content)return;
+
+  if(currentView){
+    tabbar.style.display='none';
+    if(currentView.view==='detail')content.innerHTML=renderDetail(currentView.id);
+    else if(currentView.view==='add')content.innerHTML=renderAddForm({});
+    else if(currentView.view==='edit')content.innerHTML=renderAddForm(books.find(b=>b.id===currentView.id)||{});
+    bindFormEvents();
+  } else {
+    tabbar.style.display='flex';
+    if(currentTab==='home')content.innerHTML=renderHome();
+    else if(currentTab==='library')content.innerHTML=renderLibrary();
+    else if(currentTab==='scan')content.innerHTML=renderScan();
+    else if(currentTab==='series')content.innerHTML=renderSeries();
+    else if(currentTab==='settings')content.innerHTML=renderSettings();
+    bindPageEvents();
+  }
+  updateClock();
+}
+
+// ═══════════════════════════════════════════════════════
+// BOOK COVER HTML
+// ═══════════════════════════════════════════════════════
+function coverHtml(book,w,h,extraClass=''){
+  const colors=['#3a2820','#1e2a3a','#1a2e20','#2a1a3a','#2e2010','#1a2830'];
+  const bg=colors[(book.title||'').charCodeAt(0)%colors.length];
+  const progress=(book.status==='reading'||book.status==='rereading')&&book.progress>0?
+    `<div class="book-progress-stripe"><div class="book-progress-fill" style="width:${book.progress}%"></div></div>`:'';
+  const img=book.cover?`<img src="${esc(book.cover)}" loading="lazy" onerror="this.style.display='none'" alt=""/>`:'';
+  const fallback=`<div class="book-thumb-fallback">📚</div>`;
+  return `<div class="${extraClass}" style="width:${w}px;height:${h}px;border-radius:4px;flex-shrink:0;overflow:hidden;position:relative;background:${bg};box-shadow:1px 2px 6px var(--shadow);">${img}${fallback}${progress}</div>`;
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+// ═══════════════════════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════════════════════
+function renderHome(){
+  const reading=books.filter(b=>b.status==='reading');
+  const finished=books.filter(b=>b.status==='finished');
+  const tbr=books.filter(b=>b.status==='tbr');
+  const recent=[...finished].sort((a,b)=>new Date(b.dateFinished||b.added||0)-new Date(a.dateFinished||a.added||0)).slice(0,4);
+  const withQ=books.filter(b=>b.quote);
+  const featured=withQ[Math.floor(Date.now()/86400000)%Math.max(withQ.length,1)];
+  const h=new Date().getHours();
+  const greet=h<5?'Still awake':h<12?'Good morning':h<17?'Good afternoon':h<21?'Good evening':'Late hours';
+
+  let html=`<div class="fade section-pad" style="padding-top:8px;padding-bottom:80px;">
+    <div style="margin-bottom:20px;">
+      <div class="page-eyebrow">Sanctuary</div>
+      <h1 class="serif" style="font-weight:600;font-size:36px;color:var(--ink);letter-spacing:-0.02em;line-height:1.05;margin-bottom:6px;">${greet}.<br/><em style="color:var(--gold);font-weight:400;">What are you reading?</em></h1>
+    </div>
+
+    <button class="tap" onclick="switchTab('scan')" style="width:100%;background:var(--goldbg);border:1px solid rgba(200,150,74,0.3);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:14px;margin-bottom:20px;text-align:left;cursor:pointer;">
+      <div style="width:40px;height:40px;border-radius:10px;background:rgba(200,150,74,0.15);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">📷</div>
+      <div style="flex:1;">
+        <div class="serif" style="font-weight:600;font-size:16px;color:var(--gold);margin-bottom:2px;">Smart Capture</div>
+        <div style="font-size:12px;color:var(--ink3);">Scan a shelf, haul, or screenshot → instant library</div>
+      </div>
+      <span style="color:var(--gold);font-size:16px;opacity:0.6;">›</span>
+    </button>`;
+
+  if(reading.length){
+    html+=`<div style="margin-bottom:20px;"><div style="font-size:10px;font-family:'DM Mono',monospace;letter-spacing:0.15em;color:var(--ink3);text-transform:uppercase;margin-bottom:10px;">In your hands</div>`;
+    reading.forEach(b=>{
+      html+=`<button class="reading-card tap" onclick="openDetail('${b.id}')">
+        ${coverHtml(b,64,96)}
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;min-width:0;">
+          <div>
+            <div class="serif" style="font-weight:600;font-size:18px;color:var(--ink);line-height:1.15;margin-bottom:2px;">${esc(b.title)}</div>
+            <div style="font-size:12px;color:var(--ink3);font-style:italic;">${esc(b.author)}</div>
+          </div>
+          <div>
+            <div style="height:2px;background:var(--line);border-radius:1px;overflow:hidden;margin-bottom:4px;"><div style="width:${b.progress||0}%;height:100%;background:var(--gold);"></div></div>
+            <div style="display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.08em;">
+              <span>${b.progress||0}% complete</span>
+              ${b.pages?`<span>p.${Math.round((b.pages||0)*(b.progress||0)/100)} of ${b.pages}</span>`:''}
+            </div>
+          </div>
+        </div>
+      </button>`;
+    });
+    html+='</div>';
+  }
+
+  html+=`<div style="display:flex;margin:0 0 18px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px 0;">
+    ${[{n:finished.length,l:'finished'},{n:reading.length,l:'reading'},{n:tbr.length,l:'to read'}].map((s,i)=>`
+      <div style="flex:1;text-align:center;${i<2?'border-right:1px solid var(--line);':''}">
+        <div class="serif" style="font-weight:600;font-size:26px;color:var(--ink);line-height:1;">${s.n}</div>
+        <div class="mono" style="font-size:8px;letter-spacing:0.12em;color:var(--ink3);text-transform:uppercase;margin-top:3px;">${s.l}</div>
+      </div>`).join('')}
+  </div>`;
+
+  if(recent.length){
+    html+=`<div style="margin-bottom:20px;"><div class="mono" style="font-size:10px;letter-spacing:0.15em;color:var(--ink3);text-transform:uppercase;margin-bottom:10px;">Recently closed</div>
+    <div style="display:flex;gap:12px;overflow-x:auto;margin:0 -22px;padding:4px 22px 8px;-webkit-overflow-scrolling:touch;">`;
+    recent.forEach(b=>{
+      html+=`<button class="tap" onclick="openDetail('${b.id}')" style="background:none;border:none;padding:0;flex-shrink:0;text-align:left;width:80px;cursor:pointer;">
+        ${coverHtml(b,80,120)}
+        <div class="serif" style="font-size:12px;font-weight:600;color:var(--ink);line-height:1.2;margin-top:6px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(b.title)}</div>
+      </button>`;
+    });
+    html+='</div></div>';
+  }
+
+  if(featured){
+    html+=`<div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 20px;">
+      <div class="mono" style="font-size:8px;letter-spacing:0.2em;color:var(--ink3);text-transform:uppercase;margin-bottom:10px;">A passage you marked</div>
+      <div class="serif" style="font-style:italic;font-size:17px;line-height:1.55;color:var(--ink2);margin-bottom:10px;">"${esc(featured.quote)}"</div>
+      <div class="mono" style="font-size:9px;color:var(--ink3);letter-spacing:0.1em;">— ${esc(featured.title)}</div>
+    </div>`;
+  }
+
+  if(!books.length)html+=renderEmpty();
+  html+='</div>';
+  return html;
+}
+
+function renderEmpty(){
+  return `<div style="text-align:center;padding:48px 24px;">
+    <div style="font-size:48px;margin-bottom:16px;">📚</div>
+    <div class="serif" style="font-weight:600;font-size:24px;color:var(--ink);margin-bottom:8px;">Your library awaits</div>
+    <p style="font-size:14px;color:var(--ink3);line-height:1.6;margin-bottom:24px;">Scan a bookshelf photo or add your first book.</p>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn-gold tap" onclick="switchTab('scan')">📷 Scan Shelf</button>
+      <button class="btn-outline tap" onclick="openAdd()">+ Add Book</button>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// LIBRARY
+// ═══════════════════════════════════════════════════════
+function getFiltered(){
+  let list=[...books];
+  if(curFilter!=='all')list=list.filter(b=>b.status===curFilter);
+  if(curSearch.trim()){
+    const q=curSearch.toLowerCase();
+    list=list.filter(b=>{
+      const fields=[b.title,b.author,b.series,b.isbn,b.publisher,b.year,b.format,b.owned,b.language,b.description,b.note,b.quote,b.phase,b.recommended,b.seriesNum,...(b.genres||[]),...(b.moods||[]),...(b.tropes||[]),...(b.collections||[])];
+      return fields.some(v=>v&&String(v).toLowerCase().includes(q));
+    });
+  }
+  switch(curSort){
+    case'title':list.sort((a,b)=>(a.title||'').localeCompare(b.title||''));break;
+    case'author':list.sort((a,b)=>(a.author||'').localeCompare(b.author||''));break;
+    case'rating':list.sort((a,b)=>(b.rating||0)-(a.rating||0));break;
+    case'active':list.sort((a,b)=>a.status==='reading'?-1:1);break;
+    default:list.sort((a,b)=>new Date(b.added||0)-new Date(a.added||0));
+  }
+  return list;
+}
+
+function renderLibrary(){
+  const filtered=getFiltered();
+  const filters=['all','reading','tbr','finished','paused','dnf'];
+  const filterLabels={all:'All',reading:'Reading',tbr:'TBR',finished:'Finished',paused:'Paused',dnf:'DNF'};
+
+  let html=`<div class="fade">
+    <div class="sticky-hdr">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px;">
+        <div><div class="page-eyebrow">Your collection</div><h1 class="page-title">Library</h1></div>
+        <div style="display:flex;gap:8px;">
+          <button class="tap" onclick="switchTab('scan')" style="width:36px;height:36px;border-radius:10px;background:var(--goldbg);border:1px solid rgba(200,150,74,0.3);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;">📷</button>
+          <button class="tap" onclick="openAdd()" style="width:36px;height:36px;border-radius:10px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#0D0B09;cursor:pointer;">+</button>
+        </div>
+      </div>
+      <div class="search-row">
+        <span style="color:var(--ink3);font-size:14px;">⌕</span>
+        <input type="text" placeholder="Search title, author, series, genre, trope..." value="${esc(curSearch)}" oninput="curSearch=this.value;render()" style="flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--ink);"/>
+        ${curSearch?`<button onclick="curSearch='';render()" style="background:none;border:none;color:var(--ink3);font-size:16px;cursor:pointer;">×</button>`:''}
+      </div>
+      <div style="display:flex;gap:6px;overflow-x:auto;padding:0 0 4px;-webkit-overflow-scrolling:touch;">
+        ${filters.map(f=>`<button class="filter-pill tap ${curFilter===f?'active':''}" onclick="curFilter='${f}';render()">${filterLabels[f]}</button>`).join('')}
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
+        <span class="mono" style="font-size:8px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.1em;">Sort:</span>
+        ${[{id:'newest',l:'Recent'},{id:'title',l:'A–Z'},{id:'author',l:'Author'},{id:'rating',l:'Rating'},{id:'active',l:'Active'}].map(s=>`
+          <button onclick="curSort='${s.id}';render()" style="padding:3px 9px;border-radius:6px;background:${curSort===s.id?'var(--bg4)':'transparent'};border:1px solid ${curSort===s.id?'var(--line2)':'var(--line)'};color:${curSort===s.id?'var(--ink)':'var(--ink3)'};font-family:'DM Mono',monospace;font-size:9px;cursor:pointer;">${s.l}</button>`).join('')}
+      </div>
+    </div>
+    <div style="padding:8px 22px 100px;">
+      <div class="mono" style="font-size:9px;color:var(--ink3);text-align:right;margin-bottom:6px;letter-spacing:0.08em;">${filtered.length} book${filtered.length!==1?'s':''}</div>`;
+
+  if(!filtered.length){
+    html+=`<div style="text-align:center;padding:40px 20px;color:var(--ink3);font-style:italic;font-family:'Cormorant Garamond',serif;font-size:16px;">
+      ${curSearch?`No books matching "${esc(curSearch)}"`:curFilter!=='all'?'No books in this shelf yet.':'Your library is empty.'}
+    </div>`;
+  } else {
+    filtered.forEach(b=>{
+      const sc=statusColor(b.status);
+      html+=`<button class="book-card tap" onclick="openDetail('${b.id}')">
+        <div style="width:38px;height:54px;border-radius:3px;flex-shrink:0;overflow:hidden;position:relative;background:var(--bg4);box-shadow:1px 2px 5px var(--shadow);">
+          ${b.cover?`<img src="${esc(b.cover)}" loading="lazy" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" alt=""/>`:''}
+          <div class="book-thumb-fallback">📚</div>
+          ${(b.status==='reading'||b.status==='rereading')&&b.progress>0?`<div class="book-progress-stripe"><div class="book-progress-fill" style="width:${b.progress}%;"></div></div>`:''}
+        </div>
+        <div class="book-info">
+          <div class="book-title-row">
+            <div class="book-title">${esc(b.title)}</div>
+            ${b.rating>0?`<span class="book-rating">${'★'.repeat(b.rating)}</span>`:''}
+          </div>
+          <div class="book-author">${esc(b.author)}${b.series?` <span style="opacity:0.6">· ${esc(b.series)}${b.seriesNum?' #'+b.seriesNum:''}</span>`:''}</div>
+          <div class="book-meta">
+            <span class="status-badge" style="background:${sc}18;color:${sc};">${esc(statusLabel(b.status))}</span>
+            ${b.genres&&b.genres[0]?`<span class="mono" style="font-size:8px;color:var(--ink3);opacity:0.7;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(b.genres[0])}</span>`:''}
+            ${b.spicy>0?`<span style="font-size:9px;flex-shrink:0;">${'🌶'.repeat(Math.min(b.spicy,3))}</span>`:''}
+            ${(b.status==='reading'||b.status==='rereading')&&b.progress>0?`<span class="mono" style="font-size:8px;color:var(--gold);flex-shrink:0;">${b.progress}%</span>`:''}
+          </div>
+        </div>
+        <span class="book-chevron">›</span>
+      </button>`;
+    });
+  }
+  html+='</div></div>';
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════
+// DETAIL
+// ═══════════════════════════════════════════════════════
+function renderDetail(id){
+  const b=books.find(x=>x.id===id);
+  if(!b)return'<div style="padding:20px;">Book not found.</div>';
+  const sc=statusColor(b.status);
+  const seriesBooks=b.series?books.filter(x=>x.series===b.series&&x.id!==b.id).sort((a,c)=>(parseFloat(a.seriesNum)||0)-(parseFloat(c.seriesNum)||0)):[];
+  const nextBook=seriesBooks.find(x=>parseFloat(x.seriesNum||0)>parseFloat(b.seriesNum||0));
+
+  let html=`<div class="fade">
+    <div class="detail-hero">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0 16px;margin-bottom:20px;">
+        <button class="tap" onclick="goBack()" style="color:var(--ink2);padding:8px 4px;display:flex;align-items:center;gap:4px;font-size:14px;cursor:pointer;">
+          <span style="font-size:18px;">‹</span> Back
+        </button>
+        <div style="display:flex;gap:8px;">
+          <button class="tap" onclick="openEdit('${b.id}')" style="background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:6px 12px;color:var(--ink2);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;">Edit</button>
+          <button class="tap" onclick="deleteBook('${b.id}')" style="background:rgba(139,32,32,0.1);border:1px solid rgba(139,32,32,0.2);border-radius:8px;padding:6px 12px;color:var(--red);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;">Delete</button>
+        </div>
+      </div>
+      <div class="detail-cover-wrap">
+        <div class="detail-cover">${b.cover?`<img src="${esc(b.cover)}" onerror="this.style.display='none'" alt=""/>`:''}
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:48px;opacity:0.3;">📚</div>
+        </div>
+        <h1 class="serif" style="font-weight:600;font-size:26px;color:var(--ink);text-align:center;line-height:1.15;letter-spacing:-0.01em;margin-bottom:5px;">${esc(b.title)}</h1>
+        <div style="font-style:italic;font-size:14px;color:var(--ink3);margin-bottom:8px;">${esc(b.author)}</div>
+        ${b.series?`<div class="mono" style="font-size:10px;color:var(--ink3);letter-spacing:0.1em;">${esc(b.series)}${b.seriesNum?' · Book '+b.seriesNum:''}</div>`:''}
+      </div>
+    </div>
+    <div style="padding:20px 22px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+        ${STATUSES.map(s=>`<button class="status-chip tap" onclick="updateBook('${b.id}',{status:'${s.id}'})" style="${b.status===s.id?`background:${s.color};border-color:${s.color};color:#fff;`:'border-color:var(--line);color:var(--ink2);'}">${s.label}</button>`).join('')}
+      </div>
+      ${(b.status==='reading'||b.status==='rereading')?`
+      <div style="margin-bottom:18px;">
+        <div style="display:flex;justify-content:space-between;font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">
+          <span>Progress</span><span>${b.progress||0}%${b.pages?` · p.${Math.round((b.pages||0)*(b.progress||0)/100)} of ${b.pages}`:''}</span>
+        </div>
+        <input type="range" min="0" max="100" value="${b.progress||0}" oninput="updateBook('${b.id}',{progress:Number(this.value)})" style="width:100%;accent-color:var(--gold);"/>
+      </div>`:''}
+      <div style="display:flex;gap:4px;margin-bottom:18px;">
+        ${[1,2,3,4,5].map(n=>`<button class="star ${n<=(b.rating||0)?'lit':''}" onclick="updateBook('${b.id}',{rating:${n==b.rating?0:n}})">★</button>`).join('')}
+        ${b.rating>0?`<span class="mono" style="font-size:10px;color:var(--ink3);align-self:center;margin-left:4px;">${b.rating}/5</span>`:''}
+      </div>
+      ${(b.spicy>0||b.darkness>0)?`
+      <div style="display:flex;gap:16px;margin-bottom:16px;">
+        ${b.spicy>0?`<div><div class="mono" style="font-size:8px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Spice</div><div style="font-size:14px;">${'🌶'.repeat(b.spicy)}</div></div>`:''}
+        ${b.darkness>0?`<div><div class="mono" style="font-size:8px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Darkness</div><div style="font-size:14px;">${'💀'.repeat(b.darkness)}</div></div>`:''}
+      </div>`:''}
+      ${b.tropes&&b.tropes.length?`
+      <div style="margin-bottom:16px;">
+        <div class="mono" style="font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:8px;">Tropes</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;">
+          ${b.tropes.map(t=>`<span class="mono" style="font-size:9px;padding:3px 9px;border-radius:20px;background:var(--goldbg);border:1px solid rgba(200,150,74,0.2);color:var(--gold);">${esc(t)}</span>`).join('')}
+        </div>
+      </div>`:''}
+      ${(b.genres&&b.genres.length)||(b.moods&&b.moods.length)?`
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:16px;">
+        ${(b.genres||[]).map(g=>`<span class="mono" style="font-size:9px;padding:3px 9px;border-radius:4px;background:var(--bg3);border:1px solid var(--line);color:var(--ink2);">${esc(g)}</span>`).join('')}
+        ${(b.moods||[]).map(m=>`<span style="font-family:'DM Sans',sans-serif;font-style:italic;font-size:11px;padding:2px 8px;border-radius:4px;background:var(--bg3);border:1px solid var(--line);color:var(--ink3);">${esc(m)}</span>`).join('')}
+      </div>`:''}
+      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;">
+          ${[['Format',b.format],['Year',b.year],['Pages',b.pages],['Publisher',b.publisher],['ISBN',b.isbn],['Language',b.language],['Owned',b.owned],['Recommended by',b.recommended]].filter(([,v])=>v).map(([l,v])=>`
+            <div><div class="mono" style="font-size:8px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:2px;">${l}</div><div style="font-size:12px;color:var(--ink2);line-height:1.4;">${esc(v)}</div></div>
+          `).join('')}
+        </div>
+      </div>
+      ${(b.impact>0||b.depth>0)?`
+      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div class="mono" style="font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ink3);margin-bottom:12px;">Felt sense</div>
+        ${[['Impact',b.impact],['Depth',b.depth]].map(([l,v])=>`
+          <div class="meter-row"><div class="meter-label">${l}</div><div class="meter-bars">${[1,2,3,4,5].map(i=>`<div class="meter-bar ${i<=v?'filled':''}"></div>`).join('')}</div></div>
+        `).join('')}
+        ${b.phase?`<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);"><div class="mono" style="font-size:8px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">Life phase</div><div class="serif" style="font-style:italic;font-size:15px;color:var(--ink2);">${esc(b.phase)}</div></div>`:''}
+      </div>`:''}
+      ${b.dateStarted||b.dateFinished?`<div style="font-style:italic;font-size:12px;color:var(--ink3);margin-bottom:16px;display:flex;gap:16px;">${b.dateStarted?`<span>Started ${b.dateStarted}</span>`:''}${b.dateFinished?`<span>Finished ${b.dateFinished}</span>`:''}</div>`:''}
+      ${b.note?`<div style="margin-bottom:16px;"><div class="mono" style="font-size:9px;text-transform:uppercase;letter-spacing:0.15em;color:var(--ink3);margin-bottom:8px;">Note to self</div><p style="font-size:14px;line-height:1.6;color:var(--ink2);">${esc(b.note)}</p></div>`:''}
+      ${b.quote?`<div class="quote-block"><p>${esc(b.quote)}</p></div>`:''}
+      ${b.description?`<div style="margin-bottom:16px;"><div class="mono" style="font-size:9px;text-transform:uppercase;letter-spacing:0.15em;color:var(--ink3);margin-bottom:8px;">Description</div><p style="font-size:13px;line-height:1.6;color:var(--ink3);">${esc(b.description)}</p></div>`:''}
+      ${nextBook?`<div style="background:var(--goldbg);border:1px solid rgba(200,150,74,0.25);border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;">
+        <div><div class="mono" style="font-size:8px;color:var(--gold);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:4px;">Next in series</div><div class="serif" style="font-weight:600;font-size:16px;color:var(--ink);">${esc(nextBook.title)}</div></div>
+        <button class="btn-gold tap" onclick="openDetail('${nextBook.id}')">Open</button>
+      </div>`:''}
+    </div>
+  </div>`;
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════
+// ADD / EDIT FORM
+// ═══════════════════════════════════════════════════════
+let formData={};
+let formTab='core';
+let searchResults=[];
+
+function renderAddForm(prefill){
+  const isEdit=!!(prefill&&prefill.id);
+  if(!isEdit||!formData.id||(prefill.id&&formData.id!==prefill.id)){
+    formData={
+      title:'',author:'',isbn:'',series:'',seriesNum:'',year:'',pages:'',publisher:'',
+      language:'English',description:'',format:'',owned:'',status:'tbr',progress:0,
+      rating:0,spicy:0,darkness:0,genres:[],moods:[],tropes:[],cover:'',note:'',quote:'',
+      dateStarted:'',dateFinished:'',phase:'',impact:0,depth:0,recommended:'',collections:[],
+      ...prefill
+    };
+  }
+  const f=formData;
+
+  let html=`<div class="fade">
+    <div class="sticky-hdr" style="background:var(--bg);">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <button class="tap" onclick="goBack()" style="color:var(--ink2);font-size:14px;display:flex;align-items:center;gap:4px;cursor:pointer;"><span style="font-size:18px;">‹</span>${isEdit?'Cancel':'Back'}</button>
+        <div class="serif" style="font-weight:600;font-size:18px;color:var(--ink);">${isEdit?'Edit Book':'Add Book'}</div>
+        <button class="btn-gold tap" onclick="saveForm()">Save</button>
+      </div>
+    </div>
+    <div style="padding:12px 20px 14px;background:var(--bg2);border-bottom:1px solid var(--line);">
+      <div class="mono" style="font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ink3);margin-bottom:7px;">Search to auto-fill</div>
+      <div style="display:flex;gap:8px;margin-bottom:6px;">
+        <input type="text" id="olSearch" placeholder="Title, author, or ISBN..." style="flex:1;background:var(--bg3);border:1px solid var(--line2);border-radius:8px;padding:10px 12px;color:var(--ink);font-size:14px;outline:none;" value="${esc(f._searchQ||'')}" oninput="formData._searchQ=this.value"/>
+        <button class="btn-gold tap" onclick="doOLSearch()" style="flex-shrink:0;">Search</button>
+      </div>
+      <div id="ol-msg" style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);min-height:14px;">${f._searchMsg||''}</div>
+      <div id="ol-results">${searchResults.length?renderSearchResults():''}</div>
+    </div>
+    <div style="display:flex;border-bottom:1px solid var(--line);">
+      ${['core','details','feelings','notes'].map(t=>`<button onclick="formTab='${t}';render()" style="flex:1;padding:10px 0;border:none;border-bottom:2px solid ${formTab===t?'var(--gold)':'transparent'};color:${formTab===t?'var(--gold)':'var(--ink3)'};font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;background:var(--bg);cursor:pointer;transition:all 0.2s;">${t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('')}
+    </div>
+    <div style="padding:16px 20px 60px;">`;
+
+  if(formTab==='core'){
+    html+=`
+      ${f.cover?`<div style="display:flex;justify-content:center;margin-bottom:14px;"><img src="${esc(f.cover)}" style="width:80px;height:120px;object-fit:cover;border-radius:4px;box-shadow:0 4px 16px var(--shadow);" onerror="this.style.display='none'" alt=""/></div>`:''}
+      <label class="field-label">Title *</label>
+      <input type="text" class="field-input" value="${esc(f.title)}" oninput="formData.title=this.value" placeholder="Book title..."/>
+      <label class="field-label">Author *</label>
+      <input type="text" class="field-input" value="${esc(f.author)}" oninput="formData.author=this.value" placeholder="Author name..."/>
+      <label class="field-label">Cover image URL</label>
+      <input type="text" class="field-input" value="${esc(f.cover)}" oninput="formData.cover=this.value;render()" placeholder="https://... (auto-filled when possible)"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div><label class="field-label">Series</label><input type="text" class="field-input" style="margin-bottom:0;" value="${esc(f.series)}" oninput="formData.series=this.value" placeholder="Series name"/></div>
+        <div><label class="field-label">Book #</label><input type="text" class="field-input" style="margin-bottom:0;" value="${esc(f.seriesNum)}" oninput="formData.seriesNum=this.value" placeholder="1, 2..."/></div>
+      </div>
+      <label class="field-label" style="margin-top:8px;">Status</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+        ${STATUSES.map(s=>`<button class="status-chip tap" onclick="formData.status='${s.id}';render()" style="${f.status===s.id?`background:${s.color};border-color:${s.color};color:#fff;`:'border-color:var(--line);color:var(--ink2);'}">${s.label}</button>`).join('')}
+      </div>
+      ${(f.status==='reading'||f.status==='rereading')?`
+        <label class="field-label">Progress: ${f.progress}%</label>
+        <input type="range" min="0" max="100" value="${f.progress}" oninput="formData.progress=Number(this.value)" style="width:100%;accent-color:var(--gold);margin-bottom:12px;"/>
+      `:''}
+      <label class="field-label">Your rating</label>
+      <div style="display:flex;gap:4px;margin-bottom:12px;">
+        ${[1,2,3,4,5].map(n=>`<button class="star ${n<=f.rating?'lit':''}" onclick="formData.rating=${n===f.rating?0:n};render()">★</button>`).join('')}
+      </div>
+      <label class="field-label">Format</label>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;">
+        ${FORMATS.map(fm=>`<button class="tag-chip tap ${f.format===fm?'active':''}" onclick="formData.format=formData.format==='${fm}'?'':'${fm}';render()">${fm}</button>`).join('')}
+      </div>
+      <label class="field-label">Owned where</label>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;">
+        ${OWNED.map(ow=>`<button class="tag-chip tap ${f.owned===ow?'active':''}" onclick="formData.owned=formData.owned==='${ow}'?'':'${ow}';render()">${ow}</button>`).join('')}
+      </div>`;
+  }
+
+  if(formTab==='details'){
+    html+=`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div><label class="field-label">Year</label><input type="number" class="field-input" style="margin-bottom:0;" value="${esc(f.year)}" oninput="formData.year=this.value" placeholder="2023"/></div>
+        <div><label class="field-label">Pages</label><input type="number" class="field-input" style="margin-bottom:0;" value="${esc(f.pages)}" oninput="formData.pages=this.value" placeholder="320"/></div>
+      </div>
+      <label class="field-label" style="margin-top:8px;">Publisher</label>
+      <input type="text" class="field-input" value="${esc(f.publisher)}" oninput="formData.publisher=this.value" placeholder="Publisher name"/>
+      <label class="field-label">ISBN</label>
+      <input type="text" class="field-input" value="${esc(f.isbn)}" oninput="formData.isbn=this.value" placeholder="9780000000000"/>
+      <label class="field-label">Language</label>
+      <input type="text" class="field-input" value="${esc(f.language)}" oninput="formData.language=this.value" placeholder="English"/>
+      <label class="field-label">Genre</label>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;">
+        ${GENRES.map(g=>`<button class="tag-chip tap ${(f.genres||[]).includes(g)?'active':''}" onclick="toggleArr('genres','${g}')">${g}</button>`).join('')}
+      </div>
+      <label class="field-label">Mood</label>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;">
+        ${MOODS.map(m=>`<button class="tag-chip tap ${(f.moods||[]).includes(m)?'active':''}" onclick="toggleArr('moods','${m}')">${m}</button>`).join('')}
+      </div>
+      <label class="field-label">Tropes</label>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;">
+        ${TROPES.map(t=>`<button class="tag-chip tap ${(f.tropes||[]).includes(t)?'active':''}" onclick="toggleArr('tropes','${t}')" style="border-radius:20px;">${t}</button>`).join('')}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div><label class="field-label">Date started</label><input type="date" class="field-input" style="margin-bottom:0;" value="${esc(f.dateStarted)}" oninput="formData.dateStarted=this.value"/></div>
+        <div><label class="field-label">Date finished</label><input type="date" class="field-input" style="margin-bottom:0;" value="${esc(f.dateFinished)}" oninput="formData.dateFinished=this.value"/></div>
+      </div>
+      <label class="field-label" style="margin-top:8px;">Recommended by</label>
+      <input type="text" class="field-input" value="${esc(f.recommended)}" oninput="formData.recommended=this.value" placeholder="Name or source"/>
+      <label class="field-label">Description</label>
+      <textarea class="field-textarea" oninput="formData.description=this.value" placeholder="Synopsis (auto-filled when possible)">${esc(f.description)}</textarea>`;
+  }
+
+  if(formTab==='feelings'){
+    html+=`
+      <label class="field-label">Spice 🌶</label>
+      <div style="display:flex;gap:6px;margin-bottom:14px;">
+        ${[0,1,2,3,4,5].map(n=>`<button onclick="formData.spicy=${n};render()" style="background:${n===f.spicy?'var(--goldbg)':'transparent'};border:1px solid ${n===f.spicy?'var(--gold)':'var(--line)'};border-radius:8px;padding:6px 10px;color:${n===f.spicy?'var(--gold)':'var(--ink3)'};font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;">${n===0?'None':'🌶'.repeat(n)}</button>`).join('')}
+      </div>
+      <label class="field-label">Darkness 💀</label>
+      <div style="display:flex;gap:6px;margin-bottom:14px;">
+        ${[0,1,2,3,4,5].map(n=>`<button onclick="formData.darkness=${n};render()" style="background:${n===f.darkness?'var(--redbg)':'transparent'};border:1px solid ${n===f.darkness?'var(--red)':'var(--line)'};border-radius:8px;padding:6px 10px;color:${n===f.darkness?'var(--red)':'var(--ink3)'};font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;">${n===0?'None':'💀'.repeat(n)}</button>`).join('')}
+      </div>
+      <label class="field-label">Impact (1–5)</label>
+      <div style="display:flex;gap:4px;margin-bottom:14px;">
+        ${[1,2,3,4,5].map(n=>`<button onclick="formData.impact=${n===f.impact?0:n};render()" style="flex:1;height:32px;background:${n<=f.impact?'var(--gold)':'var(--bg3)'};border:1px solid ${n<=f.impact?'var(--gold)':'var(--line)'};border-radius:6px;color:${n<=f.impact?'#0D0B09':'var(--ink3)'};font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;">${n}</button>`).join('')}
+      </div>
+      <label class="field-label">Depth (1–5)</label>
+      <div style="display:flex;gap:4px;margin-bottom:14px;">
+        ${[1,2,3,4,5].map(n=>`<button onclick="formData.depth=${n===f.depth?0:n};render()" style="flex:1;height:32px;background:${n<=f.depth?'var(--gold)':'var(--bg3)'};border:1px solid ${n<=f.depth?'var(--gold)':'var(--line)'};border-radius:6px;color:${n<=f.depth?'#0D0B09':'var(--ink3)'};font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;">${n}</button>`).join('')}
+      </div>
+      <label class="field-label">Life phase</label>
+      <input type="text" class="field-input" value="${esc(f.phase)}" oninput="formData.phase=this.value" placeholder="e.g. That difficult winter..."/>`;
+  }
+
+  if(formTab==='notes'){
+    html+=`
+      <label class="field-label">Note to self</label>
+      <textarea class="field-textarea" oninput="formData.note=this.value" placeholder="Your thoughts...">${esc(f.note)}</textarea>
+      <label class="field-label">Favourite quote</label>
+      <textarea class="field-textarea" oninput="formData.quote=this.value" placeholder="Lines that stayed with you...">${esc(f.quote)}</textarea>
+      <label class="field-label">Collections / shelves</label>
+      <input type="text" class="field-input" value="${esc((f.collections||[]).join(', '))}" oninput="formData.collections=this.value.split(',').map(s=>s.trim()).filter(Boolean)" placeholder="Favourites, Fantasy Shelf..."/>`;
+  }
+
+  html+='</div></div>';
+  return html;
+}
+
+function renderSearchResults(){
+  if(!searchResults.length)return'';
+  return `<div class="search-results">${searchResults.map((r,i)=>`
+    <div class="search-result-item" onclick="applySearchResult(${i})">
+      <div class="sr-thumb">${r.cover?`<img src="${esc(r.cover)}" onerror="this.style.display='none'" alt=""/>`:''}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="serif" style="font-weight:600;font-size:14px;color:var(--ink);margin-bottom:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(r.title)}</div>
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(r.author)}</div>
+        <div class="mono" style="font-size:9px;color:var(--ink3);">${[r.year,r.pages&&r.pages+' pages',r.publisher].filter(Boolean).join(' · ')}</div>
+      </div>
+      <div class="mono" style="font-size:9px;color:var(--gold);flex-shrink:0;">Fill›</div>
+    </div>`).join('')}</div>`;
+}
+
+async function doOLSearch(){
+  const q=(formData._searchQ||'').trim();
+  if(!q)return;
+  const msgEl=document.getElementById('ol-msg');
+  const resEl=document.getElementById('ol-results');
+  if(msgEl)msgEl.textContent='Searching...';
+  searchResults=[];
+  try{
+    const isISBN=/^[0-9X\-]{10,17}$/.test(q.replace(/-/g,''));
+    if(isISBN){
+      const clean=q.replace(/-/g,'');
+      const res=await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${clean}&format=json&jscmd=data`);
+      const data=await res.json();
+      const bk=data[`ISBN:${clean}`];
+      if(bk)searchResults=[{title:bk.title||'',author:(bk.authors||[])[0]?.name||'',year:bk.publish_date?.match(/\d{4}/)?.[0]||'',pages:bk.number_of_pages?String(bk.number_of_pages):'',publisher:(bk.publishers||[])[0]?.name||'',isbn:clean,cover:bk.cover?.large||bk.cover?.medium||'',description:typeof bk.notes==='string'?bk.notes:bk.notes?.value||''}];
+    } else {
+      const res=await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=7&fields=title,author_name,cover_i,first_publish_year,number_of_pages_median,publisher,isbn,description`);
+      const data=await res.json();
+      searchResults=(data.docs||[]).slice(0,7).map(d=>({title:d.title||'',author:(d.author_name||[])[0]||'',year:d.first_publish_year?String(d.first_publish_year):'',pages:d.number_of_pages_median?String(d.number_of_pages_median):'',publisher:(d.publisher||[])[0]||'',isbn:(d.isbn||[])[0]||'',cover:d.cover_i?`https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg`:'',description:typeof d.description==='string'?d.description:d.description?.value||''}));
+    }
+    if(msgEl)msgEl.textContent=searchResults.length?`${searchResults.length} result${searchResults.length>1?'s':''} found — tap to fill`:'No results found';
+    if(resEl)resEl.innerHTML=renderSearchResults();
+  } catch(e){
+    if(msgEl)msgEl.textContent='Search failed — check connection';
+  }
+}
+
+function applySearchResult(i){
+  const r=searchResults[i];
+  if(!r)return;
+  if(r.title&&!formData.title)formData.title=r.title;
+  if(r.author&&!formData.author)formData.author=r.author;
+  if(r.year&&!formData.year)formData.year=r.year;
+  if(r.pages&&!formData.pages)formData.pages=r.pages;
+  if(r.publisher&&!formData.publisher)formData.publisher=r.publisher;
+  if(r.isbn&&!formData.isbn)formData.isbn=r.isbn;
+  if(r.cover&&!formData.cover)formData.cover=r.cover;
+  if(r.description&&!formData.description)formData.description=r.description;
+  searchResults=[];
+  formData._searchMsg='✓ Details filled — complete below';
+  formData._searchQ='';
+  render();
+}
+
+function toggleArr(key,val){
+  if(!formData[key])formData[key]=[];
+  const idx=formData[key].indexOf(val);
+  if(idx>=0)formData[key].splice(idx,1);
+  else formData[key].push(val);
+  render();
+}
+
+function saveForm(){
+  if(!formData.title||!formData.title.trim()){alert('Title is required');return;}
+  const book={...formData,title:formData.title.trim(),author:(formData.author||'').trim(),updated:new Date().toISOString()};
+  if(book.id){
+    books=books.map(b=>b.id===book.id?book:b);
+  } else {
+    book.id='bv_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    book.added=new Date().toISOString();
+    books.unshift(book);
+  }
+  saveBooks();
+  formData={};searchResults=[];formTab='core';
+  goBack();
+}
+
+function bindFormEvents(){/* inline handlers cover it */}
+function bindPageEvents(){/* inline handlers cover it */}
+
+// ═══════════════════════════════════════════════════════
+// BOOK MUTATIONS
+// ═══════════════════════════════════════════════════════
+function updateBook(id,patch){
+  books=books.map(b=>b.id===id?{...b,...patch,updated:new Date().toISOString()}:b);
+  saveBooks();
+  render();
+}
+
+function deleteBook(id){
+  const b=books.find(x=>x.id===id);
+  if(!b||!confirm(`Remove "${b.title}"?`))return;
+  books=books.filter(x=>x.id!==id);
+  saveBooks();
+  goBack();
+}
+
+// ═══════════════════════════════════════════════════════
+// SCAN
+// ═══════════════════════════════════════════════════════
+let scanState={results:[],checked:new Set(),msg:'',scanning:false,progress:'',enrichDone:0,enrichTotal:0};
+
+function renderScan(){
+  const s=scanState;
+  let html=`<div class="fade">
+    <div class="sticky-hdr"><div class="page-eyebrow">AI-powered</div><h1 class="page-title">Smart Capture</h1></div>
+    <div style="padding:14px 20px 80px;">
+      <div class="drop-zone" onclick="document.getElementById('imgInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor=''" ondrop="handleDrop(event)">
+        <input type="file" id="imgInput" accept="image/*" multiple style="display:none" onchange="handleImgSelect(this)"/>
+        <div style="font-size:36px;margin-bottom:8px;">📷</div>
+        <div class="serif" style="font-weight:600;font-size:18px;color:var(--ink);margin-bottom:4px;">Drop photos or tap to upload</div>
+        <div style="font-size:12px;color:var(--ink3);line-height:1.6;">Bookshelf · Book haul · Book stack · Screenshot<br/>TikTok · Instagram · Multiple images at once</div>
+      </div>
+      <button class="tap" onclick="document.getElementById('csvInput').click()" style="width:100%;padding:12px 16px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;display:flex;align-items:center;gap:12px;margin-bottom:12px;text-align:left;cursor:pointer;">
+        <input type="file" id="csvInput" accept=".csv,.txt" style="display:none" onchange="handleCSV(this)"/>
+        <span style="font-size:24px;">📊</span>
+        <div><div style="font-weight:500;font-size:14px;color:var(--ink);margin-bottom:2px;">Import CSV</div>
+        <div class="mono" style="font-size:9px;color:var(--ink3);letter-spacing:0.06em;">Goodreads · Readwise · Custom spreadsheet</div></div>
+        <span style="color:var(--gold);font-size:16px;margin-left:auto;">›</span>
+      </button>
+      <div class="mono" style="font-size:9px;text-transform:uppercase;letter-spacing:0.15em;color:var(--ink3);text-align:center;margin-bottom:8px;">— or type a list —</div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <input type="text" id="scanText" placeholder="Iron Flame, Fourth Wing, ACOTAR..." style="flex:1;background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--ink);font-size:14px;outline:none;" onkeydown="if(event.key==='Enter')doTextScan()"/>
+        <button class="btn-gold tap" onclick="doTextScan()">Extract</button>
+      </div>`;
+
+  if(s.scanning){
+    html+=`<div style="text-align:center;padding:24px 0;">
+      <div class="pulse-dots">${[0,1,2].map((i)=>`<div class="pulse-dot" style="animation:pdot 1.4s ease ${i*0.2}s infinite;"></div>`).join('')}</div>
+      <div class="mono" style="font-size:11px;color:var(--gold);letter-spacing:0.08em;">${s.progress||'Analysing...'}</div>
+    </div>`;
+  }
+
+  if(s.enrichTotal>0&&s.enrichDone<s.enrichTotal){
+    html+=`<div class="enrich-prog">
+      <div class="enrich-prog-hdr"><span>Fetching covers & details</span><span>${s.enrichDone}/${s.enrichTotal}</span></div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${Math.round(s.enrichDone/s.enrichTotal*100)}%;"></div></div>
+    </div>`;
+  }
+
+  if(s.msg&&!s.scanning){
+    html+=`<div class="mono" style="font-size:11px;color:${s.msg.startsWith('✓')?'var(--green)':'var(--red)'};text-align:center;padding:8px 0;letter-spacing:0.06em;">${s.msg}</div>`;
+  }
+
+  if(s.results.length&&!s.scanning){
+    html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin:12px 0 10px;">
+      <div class="serif" style="font-weight:600;font-size:20px;color:var(--ink);">${s.results.length} book${s.results.length!==1?'s':''} found</div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="selectAllScan(true)" class="mono" style="background:none;border:none;color:var(--gold);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;">All</button>
+        <button onclick="selectAllScan(false)" class="mono" style="background:none;border:none;color:var(--ink3);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;">None</button>
+      </div>
+    </div>`;
+    s.results.forEach((item,i)=>{
+      html+=`<div class="scan-result">
+        <div class="scan-check ${s.checked.has(i)?'on':''}" onclick="toggleScanCheck(${i})">${s.checked.has(i)?'✓':''}</div>
+        <div class="scan-thumb">${item.cover?`<img src="${esc(item.cover)}" onerror="this.style.display='none'" alt=""/>`:''}
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:16px;opacity:0.3;">📚</div>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div class="serif" style="font-weight:600;font-size:15px;color:var(--ink);line-height:1.2;margin-bottom:2px;">${esc(item.title)}</div>
+          <div style="font-size:11px;color:var(--ink3);margin-bottom:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${esc(item.author||'')}${item.series?` · ${esc(item.series)}${item.seriesNum?' #'+item.seriesNum:''}`:''} ${item.year?`· ${item.year}`:''}</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            ${item.genre?`<span class="mono" style="font-size:8px;padding:2px 6px;border-radius:3px;background:var(--bg3);border:1px solid var(--line);color:var(--ink3);">${esc(item.genre)}</span>`:''}
+            ${item.fromCSV?`<span class="mono" style="font-size:8px;padding:2px 6px;border-radius:3px;background:var(--goldbg);border:1px solid rgba(200,150,74,0.2);color:var(--gold);">CSV</span>`:''}
+            ${item.isDup?`<span class="mono" style="font-size:8px;padding:2px 6px;border-radius:3px;background:var(--redbg);border:1px solid rgba(139,32,32,0.2);color:var(--red);">⚠ Already in vault</span>`:`<span class="mono" style="font-size:8px;padding:2px 6px;border-radius:3px;background:${item.confidence==='high'?'rgba(42,96,64,0.1)':'var(--goldbg)'};border:1px solid ${item.confidence==='high'?'rgba(42,96,64,0.25)':'rgba(200,150,74,0.2)'};color:${item.confidence==='high'?'var(--green)':'var(--gold)'};">${item.confidence==='high'?'✓ confirmed':'~ estimated'}</span>`}
+          </div>
+        </div>
+        <button onclick="editScanItem(${i})" class="mono tap" style="background:none;border:1px solid var(--line);border-radius:6px;padding:4px 8px;color:var(--ink3);font-size:8px;flex-shrink:0;margin-top:2px;cursor:pointer;">Edit</button>
+      </div>`;
+    });
+    const n=scanState.checked.size;
+    html+=`<button class="btn-gold tap" onclick="addScanSelected()" ${!n?'disabled':''} style="width:100%;padding:15px;border-radius:12px;margin-top:4px;font-size:12px;letter-spacing:0.12em;text-transform:uppercase;opacity:${n?1:0.4};">Add ${n} book${n!==1?'s':''} to library</button>`;
+  }
+  html+='</div></div>';
+  return html;
+}
+
+function handleDrop(e){
+  e.preventDefault();
+  e.currentTarget.style.borderColor='';
+  const files=Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/'));
+  if(files.length)processImages(files);
+}
+function handleImgSelect(inp){
+  const files=Array.from(inp.files).filter(f=>f.type.startsWith('image/'));
+  if(files.length)processImages(files);
+  inp.value='';
+}
+function handleCSV(inp){
+  const f=inp.files[0];
+  if(f)processCSV(f);
+  inp.value='';
+}
+
+async function processImages(files){
+  const key=getAPI();
+  if(!key){scanState.msg='✗ API key required — set it in Settings → AI Scan key';scanState.scanning=false;render();return;}
+  scanState={...scanState,results:[],checked:new Set(),msg:'',scanning:true,progress:`Scanning ${files.length} image${files.length>1?'s':''}...`};
+  render();
+  const allItems=[];
+  for(let i=0;i<files.length;i++){
+    const file=files[i];
+    scanState.progress=`Scanning image ${i+1} of ${files.length}...`;
+    refreshScanUI();
+    try{
+      const dataUrl=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(file);});
+      const b64=dataUrl.split(',')[1];
+      const mediaType=(file.type&&file.type.startsWith('image/'))?file.type:'image/jpeg';
+      const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mediaType,data:b64}},{type:'text',text:`You are an expert book identifier. Look carefully at this image. It may show book covers, a bookshelf, haul, stack, screenshot, or social media post.
+
+Identify EVERY book visible. For each return:
+- title (exact)
+- author (from cover or your knowledge)
+- series + seriesNum
+- year, genre
+- confidence: high|medium|low
+
+Return ONLY raw JSON array, no markdown, start with [:
+[{"title":"","author":"","series":"","seriesNum":"","year":"","genre":"","confidence":""}]
+If no books: []`}]}]})});
+      if(!resp.ok){const et=await resp.text().catch(()=>'');scanState.msg=`✗ API error ${resp.status}: ${et.slice(0,60)}`;scanState.scanning=false;render();return;}
+      const data=await resp.json();
+      const raw=(data.content?.[0]?.text||'').trim();
+      let items=[];
+      try{items=JSON.parse(raw);}catch{
+        const stripped=raw.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
+        try{items=JSON.parse(stripped);}catch{const m=raw.match(/\[[\s\S]*?\]/);if(m)try{items=JSON.parse(m[0]);}catch{}}
+      }
+      allItems.push(...(Array.isArray(items)?items.filter(x=>x&&x.title):[]) );
+    }catch(e){scanState.msg=`✗ ${e.message||'Scan error'}`;scanState.scanning=false;render();return;}
+  }
+  if(!allItems.length){scanState.msg='✗ No books detected — try a clearer image';scanState.scanning=false;render();return;}
+  await enrichAndShow(allItems,'');
+}
+
+async function doTextScan(){
+  const key=getAPI();
+  const text=document.getElementById('scanText')?.value.trim()||'';
+  if(!text)return;
+  if(!key){scanState.msg='✗ API key required — set it in Settings → AI Scan key';render();return;}
+  scanState={...scanState,results:[],checked:new Set(),msg:'',scanning:true,progress:'Extracting books...'};
+  render();
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:`Extract every book from this text. Fill in details from your knowledge.
+
+Text: "${text}"
+
+Return ONLY raw JSON array, start with [:
+[{"title":"","author":"","series":"","seriesNum":"","year":"","genre":"","confidence":"high|medium|low"}]`}]})});
+    if(!resp.ok){const et=await resp.text().catch(()=>'');scanState.msg=`✗ API error ${resp.status}`;scanState.scanning=false;render();return;}
+    const data=await resp.json();
+    const raw=(data.content?.[0]?.text||'').trim();
+    let items=[];
+    try{items=JSON.parse(raw);}catch{const m=raw.match(/\[[\s\S]*?\]/);if(m)try{items=JSON.parse(m[0]);}catch{}}
+    const valid=Array.isArray(items)?items.filter(x=>x?.title):[];
+    if(!valid.length){scanState.msg='✗ No books found in that text';scanState.scanning=false;render();return;}
+    await enrichAndShow(valid,'');
+  }catch(e){scanState.msg=`✗ ${e.message||'Error'}`;scanState.scanning=false;render();}
+}
+
+async function processCSV(file){
+  scanState={...scanState,results:[],checked:new Set(),msg:'',scanning:true,progress:'Reading CSV...'};
+  render();
+  const text=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsText(file);});
+  const lines=text.split('\n').filter(l=>l.trim());
+  if(!lines.length){scanState.msg='✗ Empty CSV';scanState.scanning=false;render();return;}
+
+  const parseCSVLine=(line)=>{
+    const result=[];let cur='';let inQ=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i];
+      if(ch==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+      else if(ch===','&&!inQ){result.push(cur.trim());cur='';}
+      else cur+=ch;
+    }
+    result.push(cur.trim());return result;
+  };
+  const headers=parseCSVLine(lines[0]).map(h=>h.replace(/^"|"$/g,'').trim().toLowerCase());
+  const isReadwise=headers.includes('highlight')&&(headers.includes('book title')||headers.includes('book author'));
+  const findCol=(...names)=>headers.findIndex(h=>names.some(n=>h===n||h.includes(n)));
+  const titleIdx=isReadwise?findCol('book title'):findCol('title','name','book');
+  const authorIdx=isReadwise?findCol('book author'):findCol('author','writer');
+  const isbnIdx=findCol('isbn','asin','amazon book id');
+  const seriesIdx=findCol('series');
+  const yearIdx=findCol('year','published','date added','date read');
+  const pagesIdx=findCol('page','pages','num pages');
+  const genreIdx=findCol('genre','category','subject','bookshelf');
+  const statusIdx=findCol('status','shelf','exclusive shelf','read status');
+  const ratingIdx=findCol('rating','stars','my rating');
+  const reviewIdx=isReadwise?findCol('note'):findCol('review','note','comment','private notes');
+  const highlightIdx=isReadwise?findCol('highlight'):-1;
+  const getCell=(cells,idx)=>idx<0||idx>=cells.length?'':cells[idx].replace(/^"|"$/g,'').trim();
+
+  const bookMap=new Map();
+  lines.slice(1).filter(l=>l.trim()).forEach(line=>{
+    const cells=parseCSVLine(line);
+    const title=getCell(cells,titleIdx);
+    if(!title)return;
+    if(isReadwise){
+      if(!bookMap.has(title))bookMap.set(title,{title,author:getCell(cells,authorIdx),isbn:getCell(cells,isbnIdx),highlights:[],confidence:'high',fromCSV:true});
+      const h=highlightIdx>=0?getCell(cells,highlightIdx):'';
+      const n=reviewIdx>=0?getCell(cells,reviewIdx):'';
+      if(h)bookMap.get(title).highlights.push(h+(n?' [Note: '+n+']':''));
+    } else {
+      if(!bookMap.has(title)){
+        const rawS=statusIdx>=0?getCell(cells,statusIdx).toLowerCase():'';
+        let status='tbr';
+        if(rawS.includes('read')&&!rawS.includes('to')&&!rawS.includes('want'))status='finished';
+        else if(rawS.includes('reading')||rawS.includes('current'))status='reading';
+        else if(rawS.includes('dnf'))status='dnf';
+        const rawR=ratingIdx>=0?getCell(cells,ratingIdx):'';
+        const rating=rawR?Math.min(5,Math.round(parseFloat(rawR)||0)):0;
+        const genre=genreIdx>=0?getCell(cells,genreIdx):'';
+        bookMap.set(title,{title,author:getCell(cells,authorIdx),isbn:getCell(cells,isbnIdx),series:getCell(cells,seriesIdx),year:getCell(cells,yearIdx).match(/\d{4}/)?.[0]||'',pages:getCell(cells,pagesIdx),genre,genres:genre?[genre]:[],note:getCell(cells,reviewIdx),status,rating,confidence:'high',fromCSV:true});
+      }
+    }
+  });
+
+  const items=[...bookMap.values()].map(b=>{
+    if(b.highlights){return{...b,quote:b.highlights.slice(0,3).join('\n\n'),note:`${b.highlights.length} highlight${b.highlights.length!==1?'s':''} from Readwise`,status:'finished',genres:[],moods:[],tropes:[],highlights:undefined};}
+    return b;
+  });
+  if(!items.length){scanState.msg='✗ No books found in CSV';scanState.scanning=false;render();return;}
+  await enrichAndShow(items,`CSV: ${items.length} book${items.length!==1?'s':''} found`);
+}
+
+async function enrichAndShow(rawItems, successMsg){
+  scanState.scanning=false;
+  scanState.enrichDone=0;scanState.enrichTotal=rawItems.length;
+  scanState.progress=`Enriching ${rawItems.length} books...`;
+
+  const enrichOne=async(item)=>{
+    try{
+      let olData=null;
+      const asin=(item.isbn||'').trim();
+      if(asin&&asin.length>=10){
+        const res=await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${asin}&format=json&jscmd=data`);
+        const data=await res.json();
+        olData=data[`ISBN:${asin}`]||null;
+      }
+      if(!olData&&item.title){
+        const q=encodeURIComponent(item.title+(item.author?' '+item.author:''));
+        const res=await fetch(`https://openlibrary.org/search.json?q=${q}&limit=1&fields=title,author_name,cover_i,first_publish_year,number_of_pages_median,publisher,isbn,description`);
+        const data=await res.json();
+        const doc=data.docs?.[0];
+        if(doc)olData={authors:doc.author_name?[{name:doc.author_name[0]}]:[],cover_i:doc.cover_i,first_publish_year:doc.first_publish_year,number_of_pages:doc.number_of_pages_median,publishers:doc.publisher?[{name:doc.publisher[0]}]:[],description:typeof doc.description==='string'?doc.description:doc.description?.value||'',isbn:(doc.isbn||[])[0]||''};
+      }
+      const patch={};
+      if(olData){
+        if(olData.cover?.large)patch.cover=olData.cover.large;
+        else if(olData.cover_i)patch.cover=`https://covers.openlibrary.org/b/id/${olData.cover_i}-L.jpg`;
+        if(!item.author&&olData.authors?.[0]?.name)patch.author=olData.authors[0].name;
+        if(!item.year){if(olData.publish_date)patch.year=olData.publish_date.match(/\d{4}/)?.[0]||'';else if(olData.first_publish_year)patch.year=String(olData.first_publish_year);}
+        if(!item.pages&&olData.number_of_pages)patch.pages=String(olData.number_of_pages);
+        if(!item.publisher&&olData.publishers?.[0]?.name)patch.publisher=olData.publishers[0].name;
+        if(!item.description&&olData.description)patch.description=olData.description.slice(0,500);
+        if(!item.isbn&&olData.isbn)patch.isbn=olData.isbn;
+      }
+      if(!patch.cover&&!item.cover)patch.cover=`https://covers.openlibrary.org/b/title/${encodeURIComponent(item.title)}-M.jpg`;
+      return{...item,...patch};
+    }catch{return{...item,cover:item.cover||`https://covers.openlibrary.org/b/title/${encodeURIComponent(item.title)}-M.jpg`};}
+  };
+
+  const BATCH=5;const enriched=[];
+  for(let i=0;i<rawItems.length;i+=BATCH){
+    const batch=rawItems.slice(i,i+BATCH);
+    const results=await Promise.all(batch.map(enrichOne));
+    enriched.push(...results);
+    scanState.enrichDone=Math.min(i+BATCH,rawItems.length);
+    refreshScanUI();
+    if(i+BATCH<rawItems.length)await new Promise(r=>setTimeout(r,300));
+  }
+  scanState.enrichTotal=0;scanState.enrichDone=0;
+
+  const final=enriched.map((it,i)=>({
+    ...it,
+    id:'scan_'+Date.now()+'_'+i,
+    status:it.status||'tbr',progress:0,rating:it.rating||0,
+    spicy:0,darkness:0,genres:it.genres||[...(it.genre?[it.genre]:[])],
+    moods:[],tropes:[],collections:[],
+    added:new Date().toISOString(),
+    isDup:books.some(b=>b.title?.toLowerCase().trim()===(it.title||'').toLowerCase().trim()),
+  }));
+
+  scanState.results=final;
+  scanState.checked=new Set(final.map((_,i)=>i).filter(i=>!final[i].isDup));
+  scanState.msg=final.length?`✓ ${successMsg||final.length+' books found'} — select to add`:'✗ No books detected';
+  scanState.scanning=false;
+  render();
+}
+
+function refreshScanUI(){
+  // Just update the progress text without full re-render
+  const el=document.querySelector('.pulse-dots');
+  if(el)el.parentElement.querySelector('.mono').textContent=scanState.progress;
+  const ep=document.querySelector('.enrich-prog .prog-fill');
+  if(ep&&scanState.enrichTotal>0)ep.style.width=`${Math.round(scanState.enrichDone/scanState.enrichTotal*100)}%`;
+  const et=document.querySelector('.enrich-prog-hdr span:last-child');
+  if(et)et.textContent=`${scanState.enrichDone}/${scanState.enrichTotal}`;
+}
+
+function toggleScanCheck(i){
+  if(scanState.checked.has(i))scanState.checked.delete(i);
+  else scanState.checked.add(i);
+  render();
+}
+function selectAllScan(v){
+  scanState.checked=v?new Set(scanState.results.map((_,i)=>i)):new Set();
+  render();
+}
+function editScanItem(i){
+  const item=scanState.results[i];
+  if(!item)return;
+  openAdd(item);
+}
+function addScanSelected(){
+  const toAdd=scanState.results.filter((_,i)=>scanState.checked.has(i));
+  if(!toAdd.length)return;
+  const dups=scanState.results.length-toAdd.length;
+  toAdd.forEach(item=>{
+    const book={...item};delete book.isDup;delete book.fromCSV;delete book.confidence;
+    books.unshift(book);
+  });
+  saveBooks();
+  scanState.results=[];scanState.checked=new Set();
+  scanState.msg=`✓ ${toAdd.length} book${toAdd.length!==1?'s':''} added${dups>0?` · ${dups} duplicate${dups!==1?'s':''} skipped`:''}`;
+  setTimeout(()=>{scanState.msg='';switchTab('library');},1500);
+  render();
+}
+
+// ═══════════════════════════════════════════════════════
+// SERIES
+// ═══════════════════════════════════════════════════════
+function renderSeries(){
+  const groups={};
+  books.forEach(b=>{
+    if(b.series?.trim()){
+      const k=b.series.trim().toLowerCase();
+      if(!groups[k])groups[k]={name:b.series,items:[]};
+      groups[k].items.push(b);
+    }
+  });
+  Object.values(groups).forEach(g=>g.items.sort((a,b)=>(parseFloat(a.seriesNum)||0)-(parseFloat(b.seriesNum)||0)));
+  const sorted=Object.values(groups).sort((a,b)=>b.items.length-a.items.length);
+  const SPINE_COLORS=['#2a3040','#402830','#283a28','#38302a','#2a2840','#3a2830'];
+
+  if(!sorted.length)return`<div class="fade section-pad" style="padding-bottom:80px;"><div class="page-eyebrow">Your series</div><h1 class="page-title" style="margin-bottom:20px;">Series</h1><div style="text-align:center;padding:40px 0;color:var(--ink3);font-style:italic;font-family:'Cormorant Garamond',serif;font-size:16px;">No series tracked yet.<br>Add a series name when adding books.</div></div>`;
+
+  let html=`<div class="fade section-pad" style="padding-bottom:80px;"><div class="page-eyebrow">Your series</div><h1 class="page-title" style="margin-bottom:16px;">Series</h1>`;
+  sorted.forEach((g,gi)=>{
+    const done=g.items.filter(b=>b.status==='finished').length;
+    const pct=Math.round(done/g.items.length*100);
+    const next=g.items.find(b=>b.status!=='finished'&&b.status!=='dnf');
+    const isOpen=seriesOpen[gi];
+    html+=`<div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;margin-bottom:12px;overflow:hidden;">
+      <button onclick="seriesOpen[${gi}]=!seriesOpen[${gi}];render()" style="width:100%;text-align:left;background:none;border:none;padding:14px 16px;display:flex;gap:14px;align-items:center;cursor:pointer;">
+        <div style="display:flex;gap:2px;align-items:flex-end;flex-shrink:0;">
+          ${g.items.slice(0,5).map((b,idx)=>`<div class="spine" style="height:${32+idx*3}px;background:${SPINE_COLORS[idx%SPINE_COLORS.length]};">${b.cover?`<img src="${esc(b.cover)}" alt=""/>`:''}</div>`).join('')}
+          ${g.items.length>5?`<div class="mono" style="font-size:8px;color:var(--ink3);padding-left:2px;">+${g.items.length-5}</div>`:''}
+        </div>
+        <div style="flex:1;">
+          <div class="serif" style="font-weight:600;font-size:18px;color:var(--ink);margin-bottom:3px;">${esc(g.name)}</div>
+          <div class="mono" style="font-size:9px;color:var(--ink3);letter-spacing:0.06em;margin-bottom:6px;">${g.items.length} book${g.items.length!==1?'s':''} · ${done} read · ${pct}% complete</div>
+          <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;"></div></div>
+        </div>
+        ${next?`<button onclick="event.stopPropagation();openDetail('${next.id}')" style="flex-shrink:0;background:var(--goldbg);border:1px solid rgba(200,150,74,0.3);border-radius:8px;padding:6px 10px;color:var(--gold);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;">Read next›</button>`:''}
+      </button>
+      ${isOpen?`<div style="padding:0 16px 14px;border-top:1px solid var(--line);">
+        ${g.items.map((b,idx)=>{
+          const sc=b.status==='finished'?'✓':b.status==='reading'?'▶':b.status==='dnf'?'✗':'○';
+          return `<button onclick="openDetail('${b.id}')" style="width:100%;text-align:left;display:flex;gap:10px;padding:10px 0;border:none;${idx<g.items.length-1?'border-bottom:1px solid var(--line);':''}background:none;cursor:pointer;">
+            <div class="serif" style="font-size:20px;font-weight:600;color:var(--line2);min-width:28px;font-style:italic;">${b.seriesNum||idx+1}</div>
+            <div style="width:36px;height:52px;border-radius:2px;overflow:hidden;position:relative;background:${SPINE_COLORS[idx%SPINE_COLORS.length]};flex-shrink:0;">${b.cover?`<img src="${esc(b.cover)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'" alt=""/>`:''}</div>
+            <div style="flex:1;">
+              <div class="serif" style="font-weight:600;font-size:14px;color:var(--ink);line-height:1.2;">${esc(b.title)}</div>
+              <div class="mono" style="font-size:9px;color:var(--ink3);margin-top:2px;">${sc} ${statusLabel(b.status)}${b.rating>0?' · '+'★'.repeat(b.rating):''}</div>
+            </div>
+          </button>`;
+        }).join('')}
+      </div>`:''}
+    </div>`;
+  });
+  html+='</div>';
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════
+function renderSettings(){
+  const apiKey=getAPI();
+  const stats=STATUSES.map(s=>({...s,n:books.filter(b=>b.status===s.id).length})).filter(s=>s.n>0);
+  return`<div class="fade section-pad" style="padding-bottom:80px;">
+    <div class="page-eyebrow">Preferences</div>
+    <h1 class="page-title" style="margin-bottom:20px;">Settings</h1>
+
+    <div class="mono" style="font-size:9px;text-transform:uppercase;letter-spacing:0.18em;color:var(--ink3);margin-bottom:10px;">Appearance</div>
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:20px;">
+      ${[{id:'dark',label:'Candlelit Library',desc:'Dark, warm, intimate',emoji:'🕯'},{id:'light',label:'Aged Paper',desc:'Light, warm, literary',emoji:'📜'}].map((opt,i)=>`
+        <button onclick="setTheme('${opt.id}')" style="width:100%;display:flex;align-items:center;gap:14px;padding:16px;background:none;border:none;${i===0?'border-bottom:1px solid var(--line);':''}cursor:pointer;text-align:left;">
+          <div style="width:40px;height:40px;border-radius:10px;background:${theme===opt.id?'var(--goldbg)':'var(--bg3)'};display:flex;align-items:center;justify-content:center;font-size:20px;">${opt.emoji}</div>
+          <div style="flex:1;"><div style="font-weight:500;font-size:15px;color:var(--ink);margin-bottom:2px;">${opt.label}</div><div style="font-size:12px;color:var(--ink3);">${opt.desc}</div></div>
+          ${theme===opt.id?`<div style="width:20px;height:20px;border-radius:10px;background:var(--gold);display:flex;align-items:center;justify-content:center;color:#0D0B09;font-size:12px;font-weight:700;">✓</div>`:''}
+        </button>`).join('')}
+    </div>
+
+    <div class="mono" style="font-size:9px;text-transform:uppercase;letter-spacing:0.18em;color:var(--ink3);margin-bottom:10px;">AI Scan key</div>
+    <div class="card" style="margin-bottom:20px;">
+      <p style="font-size:13px;color:var(--ink3);line-height:1.5;margin-bottom:10px;">Required for Smart Capture (photo scanning). Get your free key at <span style="color:var(--gold);">console.anthropic.com</span> → API Keys.</p>
+      <div style="display:flex;gap:8px;">
+        <input type="password" id="apiKeyInput" placeholder="sk-ant-..." value="${esc(apiKey)}" style="flex:1;background:var(--bg3);border:1px solid var(--line2);border-radius:8px;padding:10px 12px;color:var(--ink);font-size:13px;font-family:'DM Mono',monospace;outline:none;"/>
+        <button class="btn-gold tap" onclick="saveApiKey()">Save</button>
+      </div>
+      ${apiKey?`<div class="mono" style="font-size:9px;color:var(--green);margin-top:6px;letter-spacing:0.08em;">✓ API key saved</div>`:''}
+    </div>
+
+    <div class="mono" style="font-size:9px;text-transform:uppercase;letter-spacing:0.18em;color:var(--ink3);margin-bottom:10px;">Your library</div>
+    <div class="card" style="margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-size:14px;color:var(--ink);">Total books</span><span class="mono" style="font-size:14px;color:var(--gold);">${books.length}</span></div>
+      ${stats.map(s=>`<div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:13px;color:var(--ink3);">${s.label}</span><span class="mono" style="font-size:13px;color:var(--ink3);">${s.n}</span></div>`).join('')}
+    </div>
+
+    <div class="mono" style="font-size:9px;text-transform:uppercase;letter-spacing:0.18em;color:var(--ink3);margin-bottom:10px;">Backup & restore</div>
+    <div class="card" style="margin-bottom:20px;">
+      <p style="font-size:13px;color:var(--ink3);line-height:1.5;margin-bottom:14px;">Export your library to keep it safe. Import to restore on any device.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
+        <button class="btn-gold tap" onclick="exportJSON()" style="font-size:9px;padding:10px;text-align:center;">Export JSON</button>
+        <button class="btn-outline tap" onclick="document.getElementById('importInput').click()">Import JSON</button>
+        <button class="btn-outline tap" onclick="exportCSVSimple()">CSV Simple</button>
+        <button class="btn-outline tap" onclick="exportCSVFull()">CSV Full</button>
+      </div>
+      <input type="file" id="importInput" accept=".json" style="display:none" onchange="importJSON(this)"/>
+    </div>
+
+    <div class="card">
+      <div class="mono" style="font-size:9px;text-transform:uppercase;letter-spacing:0.15em;color:var(--ink3);margin-bottom:8px;">About</div>
+      <p class="serif" style="font-style:italic;font-size:15px;color:var(--ink2);line-height:1.5;">BookVault — where books become memories, and reading becomes identity.</p>
+    </div>
+  </div>`;
+}
+
+function saveApiKey(){
+  const val=document.getElementById('apiKeyInput')?.value.trim()||'';
+  if(val)localStorage.setItem('bv3_api_key',val);
+  else localStorage.removeItem('bv3_api_key');
+  render();
+}
+
+function exportJSON(){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify({version:4,exported:new Date().toISOString(),count:books.length,books},null,2)],{type:'application/json'}));
+  a.download=`bookvault-${new Date().toLocaleDateString('en-CA')}.json`;a.click();URL.revokeObjectURL(a.href);
+}
+function exportCSVSimple(){
+  const H=['title','author','isbn','series','seriesNum','pages','year','publisher','format','status','rating','genres','owned','dateStarted','dateFinished'];
+  const e=v=>'"'+String(v||'').replace(/"/g,'""')+'"';
+  const rows=books.map(b=>H.map(h=>h==='genres'?e((b.genres||[]).join('|')):e(b[h]||'')).join(','));
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([H.join(',')+'\n'+rows.join('\n')],{type:'text/csv'}));
+  a.download=`bookvault-simple-${new Date().toLocaleDateString('en-CA')}.csv`;a.click();URL.revokeObjectURL(a.href);
+}
+function exportCSVFull(){
+  const H=['title','author','isbn','series','seriesNum','pages','year','publisher','language','format','owned','status','rating','spicy','darkness','impact','depth','genres','moods','tropes','collections','cover','description','note','quote','phase','recommended','dateStarted','dateFinished','recount','added'];
+  const e=v=>'"'+String(v||'').replace(/"/g,'""')+'"';
+  const rows=books.map(b=>H.map(h=>['genres','moods','tropes','collections'].includes(h)?e((b[h]||[]).join('|')):e(b[h]||'')).join(','));
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([H.join(',')+'\n'+rows.join('\n')],{type:'text/csv'}));
+  a.download=`bookvault-full-${new Date().toLocaleDateString('en-CA')}.csv`;a.click();URL.revokeObjectURL(a.href);
+}
+function importJSON(inp){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{try{const d=JSON.parse(e.target.result);const items=d.books||d;if(!Array.isArray(items))throw new Error();let n=0;items.forEach(b=>{if(b.title&&!books.find(x=>x.id===b.id)){books.unshift(b);n++;}});saveBooks();render();alert(`Imported ${n} books`);}catch{alert('Invalid file');}};
+  r.readAsText(f);inp.value='';
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+loadBooks();
+loadTheme();
+updateClock();
+render();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
